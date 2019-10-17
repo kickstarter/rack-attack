@@ -84,9 +84,15 @@ module Rack
 
     attr_reader :configuration
 
-    def initialize(app)
+    def initialize(app, &block)
       @app = app
-      @configuration = self.class.configuration
+      @configuration =
+        if block_given?
+          configuration = Configuration.new
+          configuration.instance_exec(&block)
+        else
+          self.class.configuration
+        end
     end
 
     def call(env)
