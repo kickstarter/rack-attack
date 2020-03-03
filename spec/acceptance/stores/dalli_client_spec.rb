@@ -9,13 +9,14 @@ if defined?(::Dalli)
 
   describe "Dalli::Client as a cache backend" do
     before do
-      Rack::Attack.cache.store = Dalli::Client.new
+      @client = Dalli::Client.new
+      Rack::Attack.cache.store = @client
     end
 
     after do
-      Rack::Attack.cache.store.flush_all
+      @client.flush_all
     end
 
-    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.fetch(key) })
+    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.read(key) })
   end
 end

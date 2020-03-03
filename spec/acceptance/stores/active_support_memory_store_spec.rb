@@ -7,11 +7,12 @@ require "timecop"
 
 describe "ActiveSupport::Cache::MemoryStore as a cache backend" do
   before do
-    Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
+    @store = ActiveSupport::Cache::MemoryStore.new
+    Rack::Attack.cache.store = @store
   end
 
   after do
-    Rack::Attack.cache.store.clear
+    @store.clear
   end
 
   it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.fetch(key) })

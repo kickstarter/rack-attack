@@ -8,13 +8,14 @@ if defined?(::Redis)
 
   describe "Plain redis as a cache backend" do
     before do
-      Rack::Attack.cache.store = Redis.new
+      @store = Redis.new
+      Rack::Attack.cache.store = @store
     end
 
     after do
-      Rack::Attack.cache.store.flushdb
+      @store.flushdb
     end
 
-    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.get(key) })
+    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.read(key) })
   end
 end

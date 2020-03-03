@@ -13,12 +13,16 @@ module Rack
 
       attr_reader :store
       def store=(store)
-        @store =
-          if (proxy = BaseProxy.lookup(store))
-            proxy.new(store)
-          else
-            store
-          end
+        raise Rack::Attack::MissingStoreError if store.nil?
+
+        adapter = StoreAdapter.lookup(store)
+        if adapter
+          @store = adapter.new(store)
+        elsif store?(store)
+          @store = store
+        else
+          raise Rack::Attack::MisconfiguredStoreError
+        end
       end
 
       def count(unprefixed_key, period)
@@ -27,9 +31,6 @@ module Rack
       end
 
       def read(unprefixed_key)
-        enforce_store_presence!
-        enforce_store_method_presence!(:read)
-
         store.read("#{prefix}:#{unprefixed_key}")
       end
 
@@ -67,33 +68,19 @@ module Rack
       end
 
       def do_count(key, expires_in)
-        enforce_store_presence!
-        enforce_store_method_presence!(:increment)
-
         result = store.increment(key, 1, expires_in: expires_in)
 
         # NB: Some stores return nil when incrementing uninitialized values
         if result.nil?
-          enforce_store_method_presence!(:write)
-
           store.write(key, 1, expires_in: expires_in)
         end
         result || 1
       end
 
-      def enforce_store_presence!
-        if store.nil?
-          raise Rack::Attack::MissingStoreError
-        end
-      end
+      STORE_METHODS = [:read, :write, :increment, :delete].freeze
 
-      def enforce_store_method_presence!(method_name)
-        if !store.respond_to?(method_name)
-          raise(
-            Rack::Attack::MisconfiguredStoreError,
-            "Configured store #{store.class.name} doesn't respond to ##{method_name} method"
-          )
-        end
+      def store?(object)
+        STORE_METHODS.all? { |meth| object.respond_to?(meth) }
       end
     end
   end

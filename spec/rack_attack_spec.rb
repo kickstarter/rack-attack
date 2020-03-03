@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'spec_helper'
+require_relative 'support/dummy_store_implementation'
 
 describe 'Rack::Attack' do
   it_allows_ok_requests
@@ -102,7 +103,10 @@ describe 'Rack::Attack' do
 
   describe 'reset!' do
     it 'raises an error when is not supported by cache store' do
-      Rack::Attack.cache.store = Class.new
+      store_class = Class.new { include DummyStoreImplementation }
+
+      Rack::Attack.cache.store = store_class.new
+
       assert_raises(Rack::Attack::IncompatibleStoreError) do
         Rack::Attack.reset!
       end

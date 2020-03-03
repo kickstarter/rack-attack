@@ -8,11 +8,12 @@ if defined?(::ActiveSupport::Cache::RedisStore)
 
   describe "ActiveSupport::Cache::RedisStore as a cache backend" do
     before do
-      Rack::Attack.cache.store = ActiveSupport::Cache::RedisStore.new
+      @store = ActiveSupport::Cache::RedisStore.new
+      Rack::Attack.cache.store = @store
     end
 
     after do
-      Rack::Attack.cache.store.clear
+      @store.clear
     end
 
     it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.read(key) })

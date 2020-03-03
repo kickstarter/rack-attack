@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
-require 'rack/attack/base_proxy'
+require 'rack/attack/store_adapter'
 
 module Rack
   class Attack
-    module StoreProxy
-      class RedisProxy < BaseProxy
-        def initialize(*args)
+    module StoreAdapters
+      class RedisAdapter < StoreAdapter
+        def initialize(store)
           if Gem::Version.new(Redis::VERSION) < Gem::Version.new("3")
             warn 'RackAttack requires Redis gem >= 3.0.0.'
           end
 
-          super(*args)
+          super
         end
 
         def self.handle?(store)
@@ -19,28 +19,28 @@ module Rack
         end
 
         def read(key)
-          rescuing { get(key) }
+          rescuing { store.get(key) }
         end
 
         def write(key, value, options = {})
           if (expires_in = options[:expires_in])
-            rescuing { setex(key, expires_in, value) }
+            rescuing { store.setex(key, expires_in, value) }
           else
-            rescuing { set(key, value) }
+            rescuing { store.set(key, value) }
           end
         end
 
         def increment(key, amount, options = {})
           rescuing do
-            pipelined do
-              incrby(key, amount)
-              expire(key, options[:expires_in]) if options[:expires_in]
+            store.pipelined do
+              store.incrby(key, amount)
+              store.expire(key, options[:expires_in]) if options[:expires_in]
             end.first
           end
         end
 
         def delete(key, _options = {})
-          rescuing { del(key) }
+          rescuing { store.del(key) }
         end
 
         def delete_matched(matcher, _options = nil)
@@ -49,8 +49,8 @@ module Rack
           rescuing do
             # Fetch keys in batches using SCAN to avoid blocking the Redis server.
             loop do
-              cursor, keys = scan(cursor, match: matcher, count: 1000)
-              del(*keys) unless keys.empty?
+              cursor, keys = store.scan(cursor, match: matcher, count: 1000)
+              store.del(*keys) unless keys.empty?
               break if cursor == "0"
             end
           end

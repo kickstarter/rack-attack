@@ -6,12 +6,12 @@ require 'rack/attack/cache'
 require 'rack/attack/configuration'
 require 'rack/attack/path_normalizer'
 require 'rack/attack/request'
-require 'rack/attack/store_proxy/dalli_proxy'
-require 'rack/attack/store_proxy/mem_cache_store_proxy'
-require 'rack/attack/store_proxy/redis_proxy'
-require 'rack/attack/store_proxy/redis_store_proxy'
-require 'rack/attack/store_proxy/redis_cache_store_proxy'
-require 'rack/attack/store_proxy/active_support_redis_store_proxy'
+require 'rack/attack/store_adapters/dalli_adapter'
+require 'rack/attack/store_adapters/mem_cache_store_adapter'
+require 'rack/attack/store_adapters/redis_adapter'
+require 'rack/attack/store_adapters/redis_store_adapter'
+require 'rack/attack/store_adapters/redis_cache_store_adapter'
+require 'rack/attack/store_adapters/active_support_redis_store_adapter'
 
 require 'rack/attack/railtie' if defined?(::Rails)
 

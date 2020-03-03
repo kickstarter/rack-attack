@@ -97,3 +97,7 @@ Style/SpecialGlobalVars:
 
 Style/UnneededPercentQ:
   Enabled: true
+
+Lint/UnusedMethodArgument:
+  Exclude:
+    - "lib/rack/attack/store_adapter.rb"

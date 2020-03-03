@@ -8,11 +8,12 @@ if defined?(::Dalli)
 
   describe "ActiveSupport::Cache::MemCacheStore as a cache backend" do
     before do
-      Rack::Attack.cache.store = ActiveSupport::Cache::MemCacheStore.new
+      @store = ActiveSupport::Cache::MemCacheStore.new
+      Rack::Attack.cache.store = @store
     end
 
     after do
-      Rack::Attack.cache.store.clear
+      @store.clear
     end
 
     it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.read(key) })

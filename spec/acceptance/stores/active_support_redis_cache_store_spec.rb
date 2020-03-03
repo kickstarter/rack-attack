@@ -13,13 +13,14 @@ if should_run
 
   describe "ActiveSupport::Cache::RedisCacheStore as a cache backend" do
     before do
-      Rack::Attack.cache.store = ActiveSupport::Cache::RedisCacheStore.new
+      @store = ActiveSupport::Cache::RedisCacheStore.new
+      Rack::Attack.cache.store = @store
     end
 
     after do
-      Rack::Attack.cache.store.clear
+      @store.clear
     end
 
-    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.fetch(key) })
+    it_works_for_cache_backed_features(fetch_from_store: ->(key) { Rack::Attack.cache.store.read(key) })
   end
 end

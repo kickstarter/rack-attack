@@ -10,15 +10,16 @@ if defined?(::Dalli) && defined?(::ConnectionPool)
 
   describe "ConnectionPool with Dalli::Client as a cache backend" do
     before do
-      Rack::Attack.cache.store = ConnectionPool.new { Dalli::Client.new }
+      @store = ConnectionPool.new { Dalli::Client.new }
+      Rack::Attack.cache.store = @store
     end
 
     after do
-      Rack::Attack.cache.store.with { |client| client.flush_all }
+      @store.with { |client| client.flush_all }
     end
 
     it_works_for_cache_backed_features(
-      fetch_from_store: ->(key) { Rack::Attack.cache.store.with { |client| client.fetch(key) } }
+      fetch_from_store: ->(key) { Dalli::Client.new.get(key) }
     )
   end
 end

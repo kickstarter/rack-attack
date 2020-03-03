@@ -29,7 +29,7 @@ class MiniTest::Spec
   include Rack::Test::Methods
 
   before do
-    Rails.cache = nil
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
   end
 
   after do
