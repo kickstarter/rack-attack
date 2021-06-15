@@ -15,6 +15,7 @@ module Rack
         block.call(request).tap do |match|
           if match
             request.env["rack.attack.matched"] = name
+            request.env['rack.attack.match_discriminator'] = match
             request.env["rack.attack.match_type"] = type
             Rack::Attack.instrument(request)
           end
