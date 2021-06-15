@@ -22,9 +22,9 @@ module Rack
           end
       end
 
-      def count(unprefixed_key, period)
+      def count(unprefixed_key, period, weight = 1)
         key, expires_in = key_and_expiry(unprefixed_key, period)
-        do_count(key, expires_in)
+        do_count(key, expires_in, weight)
       end
 
       def read(unprefixed_key)
@@ -67,19 +67,19 @@ module Rack
         ["#{prefix}:#{(@last_epoch_time / period).to_i}:#{unprefixed_key}", expires_in]
       end
 
-      def do_count(key, expires_in)
+      def do_count(key, expires_in, weight)
         enforce_store_presence!
         enforce_store_method_presence!(:increment)
 
-        result = store.increment(key, 1, expires_in: expires_in)
+        result = store.increment(key, weight, expires_in: expires_in)
 
         # NB: Some stores return nil when incrementing uninitialized values
         if result.nil?
           enforce_store_method_presence!(:write)
 
-          store.write(key, 1, expires_in: expires_in)
+          store.write(key, weight, expires_in: expires_in)
         end
-        result || 1
+        result || weight
       end
 
       def enforce_store_presence!

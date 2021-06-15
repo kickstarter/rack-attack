@@ -244,7 +244,7 @@ Throttle state is stored in a [configurable cache](#cache-store-configuration) (
 
 #### `throttle(name, options, &block)`
 
-Name your custom throttle, provide `limit` and `period` as options, and make your ruby-block argument return the __discriminator__. This discriminator is how you tell rack-attack whether you're limiting per IP address, per user email or any other.
+Name your custom throttle, provide `limit`, `period` and `weight` as options, and make your ruby-block argument return the __discriminator__. This discriminator is how you tell rack-attack whether you're limiting per IP address, per user email or any other.
 
 The request object is a [Rack::Request](http://www.rubydoc.info/gems/rack/Rack/Request).
 
@@ -273,6 +273,14 @@ limit_proc = proc { |req| req.env["REMOTE_USER"] == "admin" ? 100 : 1 }
 period_proc = proc { |req| req.env["REMOTE_USER"] == "admin" ? 1 : 60 }
 
 Rack::Attack.throttle('request per ip', limit: limit_proc, period: period_proc) do |request|
+  request.ip
+end
+
+# Weight can be used to make some requests cost more than others while
+# sharing the same limit.
+weight_proc = proc { |req| req.path.start_with?('/search') ? 10 : 1 }
+
+Rack::Attack.throttle('request per ip', limit: 10, period: 1, weight: weight_proc) do |request|
   request.ip
 end
 ```

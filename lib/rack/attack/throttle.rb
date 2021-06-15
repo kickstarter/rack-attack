@@ -5,7 +5,7 @@ module Rack
     class Throttle
       MANDATORY_OPTIONS = [:limit, :period].freeze
 
-      attr_reader :name, :limit, :period, :block, :type
+      attr_reader :name, :limit, :period, :weight, :block, :type
 
       def initialize(name, options, &block)
         @name = name
@@ -15,6 +15,7 @@ module Rack
         end
         @limit = options[:limit]
         @period = options[:period].respond_to?(:call) ? options[:period] : options[:period].to_i
+        @weight = options[:weight].respond_to?(:call) ? options[:weight] : (options[:weight] || 1).to_i
         @type   = options.fetch(:type, :throttle)
       end
 
@@ -28,7 +29,8 @@ module Rack
 
         current_period  = period_for(request)
         current_limit   = limit_for(request)
-        count           = cache.count("#{name}:#{discriminator}", current_period)
+        current_weight  = weight_for(request)
+        count           = cache.count("#{name}:#{discriminator}", current_period, current_weight)
 
         data = {
           discriminator: discriminator,
@@ -63,6 +65,10 @@ module Rack
 
       def limit_for(request)
         limit.respond_to?(:call) ? limit.call(request) : limit
+      end
+
+      def weight_for(request)
+        weight.respond_to?(:call) ? weight.call(request) : weight
       end
 
       def annotate_request_with_throttle_data(request, data)

@@ -34,6 +34,79 @@ describe "#throttle" do
     end
   end
 
+  it "supports a non-1 constant weight" do
+    Rack::Attack.throttle("by ip", limit: 4, period: 60, weight: 2) do |request|
+      request.ip
+    end
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 200, last_response.status
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 200, last_response.status
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 429, last_response.status
+    assert_nil last_response.headers["Retry-After"]
+    assert_equal "Retry later\n", last_response.body
+
+    get "/", {}, "REMOTE_ADDR" => "5.6.7.8"
+
+    assert_equal 200, last_response.status
+
+    Timecop.travel(60) do
+      get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+      assert_equal 200, last_response.status
+    end
+  end
+
+  it "supports a dynamic weight" do
+    weight_proc = lambda do |request|
+      if request.env["X-APIKey"] == "private-secret"
+        3
+      else
+        2
+      end
+    end
+    Rack::Attack.throttle("by ip", limit: 4, period: 60, weight: weight_proc) do |request|
+      request.ip
+    end
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 200, last_response.status
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 200, last_response.status
+
+    get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+    assert_equal 429, last_response.status
+    assert_nil last_response.headers["Retry-After"]
+    assert_equal "Retry later\n", last_response.body
+
+    get "/", {}, "REMOTE_ADDR" => "5.6.7.8", "X-APIKey" => "private-secret"
+
+    assert_equal 200, last_response.status
+
+    get "/", {}, "REMOTE_ADDR" => "5.6.7.8", "X-APIKey" => "private-secret"
+
+    assert_equal 429, last_response.status
+    assert_nil last_response.headers["Retry-After"]
+    assert_equal "Retry later\n", last_response.body
+
+    Timecop.travel(60) do
+      get "/", {}, "REMOTE_ADDR" => "1.2.3.4"
+
+      assert_equal 200, last_response.status
+    end
+  end
+
   it "returns correct Retry-After header if enabled" do
     Rack::Attack.throttled_response_retry_after_header = true
 
