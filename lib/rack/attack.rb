@@ -22,6 +22,15 @@ module Rack
     class MissingStoreError < Error; end
     class IncompatibleStoreError < Error; end
 
+    INVALID_PARAMETER_ERRORS = if defined?(Rack::RELEASE)
+                                 [
+                                   Rack::Utils::InvalidParameterError,
+                                   Rack::QueryParser::InvalidParameterError
+                                 ]
+                               else
+                                 []
+                               end
+
     autoload :Check,                'rack/attack/check'
     autoload :Throttle,             'rack/attack/throttle'
     autoload :Safelist,             'rack/attack/safelist'
@@ -126,6 +135,8 @@ module Rack
         configuration.tracked?(request)
         @app.call(env)
       end
+    rescue *INVALID_PARAMETER_ERRORS
+      [400, {}, []]
     end
   end
 end

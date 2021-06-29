@@ -1,9 +1,26 @@
 # frozen_string_literal: true
 
 require_relative 'spec_helper'
+require 'rack/query_parser' if defined?(Rack::RELEASE)
 
 describe 'Rack::Attack' do
   it_allows_ok_requests
+
+  if defined?(Rack::RELEASE)
+    describe 'call' do
+      it 'responds with 400 when invalid parameter error is raised' do
+        app = Class.new do
+          def call(*)
+            raise Rack::QueryParser::InvalidParameterError
+          end
+        end
+        middleware = Rack::Attack.new(app.new)
+        env = { 'PATH_INFO' => '/' }
+
+        _(middleware.call(env)).must_equal [400, {}, []]
+      end
+    end
+  end
 
   describe 'normalizing paths' do
     before do
