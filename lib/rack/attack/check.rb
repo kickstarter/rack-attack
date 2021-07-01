@@ -16,10 +16,15 @@ module Rack
           if match
             request.env["rack.attack.matched"] = name
             request.env["rack.attack.match_type"] = type
+            add_additional_matched_data(request)
             Rack::Attack.instrument(request)
           end
         end
       end
+
+      private
+
+      def add_additional_matched_data(_request); end
     end
   end
 end

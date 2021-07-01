@@ -75,4 +75,22 @@ describe "fail2ban" do
       assert_equal 200, last_response.status
     end
   end
+
+  it "notifies when the request is blocked" do
+    notification_matched = nil
+    notification_type = nil
+    notification_discriminator = nil
+
+    ActiveSupport::Notifications.subscribe("blocklist.rack_attack") do |_name, _start, _finish, _id, payload|
+      notification_matched = payload[:request].env["rack.attack.matched"]
+      notification_type = payload[:request].env["rack.attack.match_type"]
+      notification_discriminator = payload[:request].env["rack.attack.match_discriminator"]
+    end
+
+    2.times { get "/private-place", {}, "REMOTE_ADDR" => "1.2.3.4" }
+
+    assert_equal "fail2ban pentesters", notification_matched
+    assert_equal :blocklist, notification_type
+    assert_equal "1.2.3.4", notification_discriminator
+  end
 end

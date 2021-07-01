@@ -9,12 +9,15 @@ module Rack
           findtime  = options[:findtime]  or raise ArgumentError, "Must pass findtime option"
           maxretry  = options[:maxretry]  or raise ArgumentError, "Must pass maxretry option"
 
+          banned = false
           if banned?(discriminator)
-            # Return true for blocklist
-            true
+            banned = true
           elsif yield
-            fail!(discriminator, bantime, findtime, maxretry)
+            banned = fail!(discriminator, bantime, findtime, maxretry)
           end
+
+          Thread.current[:rack_attack_matched_data] = { match_discriminator: discriminator } if banned
+          banned
         end
 
         def reset(discriminator, options)
